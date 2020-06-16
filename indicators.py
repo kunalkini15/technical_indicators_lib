@@ -228,11 +228,124 @@ class EaseOfMovement:
   def get_value_list(self,high_values, low_values, volume_values, volume_divisor=1000000):
     emv_values = [np.nan]
     for i in range(1, len(df)):
-      mid_pt_move = ((high_values[i] - low_values[i])/2) - ((high_values[i-1] - low_values[i-1]) / 2)
-      box_ratio = (volume_values[i] / volume_divisor) / (high_values[i] - high_values[i])
+      mid_pt_move = ((high_values[i] + low_values[i])/2) - ((high_values[i-1] + low_values[i-1]) / 2)
+      box_ratio = (volume_values[i] / volume_divisor) / (high_values[i] - low_values[i])
       emv_values.append(mid_pt_move / box_ratio)
 
     return emv_values
 
 
- 
+class ForceIndex:
+  def __init__(self):
+    self.df = None
+
+  def info(self):
+    info = ("Force index tries to determine the amount of power used to move the price of an asset")
+    return info
+    
+
+  def get_value_df(self, df, time_period=14):
+    self.df = df.copy()
+    self.df["close_prev"] = self.df["close"].shift(1)
+    self.df["fi"] = (self.df["close"] - self.df["close_prev"]) * self.df["volume"]
+    df["fi"] = self.df["FI"].ewm(span=time_period).mean()
+
+class WilliamsR:
+  def __init__(self):
+    self.df = None
+
+  def info(self):
+    info = ("Williams R is tries to determine overbought and oversold levels of an asset")
+    return info
+    
+
+  def get_value_df(self, df, time_period=14):
+    self.df = df.copy()
+    self.df["highest high"] = self.df["high"].rolling(window=time_period).max()
+    self.df["lowest low"] = self.df["low"].rolling(window=time_period).min()
+    df["Williams%R"] = 100 * (self.df["close"] - self.df["highest high"]) / (self.df["highest high"] - self.df["lowest low"])
+
+  def get_value_list(self, close_values, high_values, low_values, time_period=14):
+    wil_values=[np.nan for i in range(time_period)]
+    for i in range(time_period, len(close_values)):
+      highest_high = np.max(high_values[i-time_period+1: i+1])
+      lowest_low = np.min(low_values[i-time_period+1 : i+1])
+      current_r_value = 100 * (close_values[i] - highest_high) / (highest_high - lowest_low)
+      wil_values.append(current_r_value)
+    return wil_values
+
+class MassIndex:
+  def __init__(self):
+    self.df = None
+
+  def info(self):
+    info = ("Mass index tries to determine the range of high and low values over a specified period of time")
+    return info
+
+  def get_value_df(self, df, time_period=25, ema_time_period=9):
+    self.df = df.copy()
+    self.df["difference"] = self.df["high"] - self.df["low"]
+    self.df["difference_EMA"] = self.df["difference"].ewm(span=ema_time_period).mean()
+    self.df["difference_double_EMA"] = self.df["difference_EMA"].ewm(span=ema_time_period).mean()
+    self.df["MI"] = self.df["difference_EMA"] / self.df["difference_double_EMA"]
+    df["MI"] = self.df["MI"].rolling(window=time_period).sum()
+
+class MedianPrice:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("Median determines the mid point of the price range")
+        return info
+
+    def get_value_df(self, df):
+        df["MED"] = (df["high"] + df["low"]) / 2
+
+class Momentum:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("Momentum helps to determine th price changes from one period to another.")
+        return info
+
+    def get_value_df(self, df, time_period=1):
+        self.df = df.copy()
+        self.df["close_prev"] = self.df["close"].shift(time_period)
+        df["MOM"] = df["close"] - df["close_prev"]
+
+
+
+class MoneyFlowIndex:
+  def __init__(self):
+    self.df = None
+
+  def info(self):
+    info = ("Money flow index uses price and volume data to for identifying overbought and oversold signals of an asset")
+    return info
+    
+
+  def get_value_df(self, df, time_period=14):
+    self.df = df.copy()
+    self.df["TP"] = (self.df["low"] + self.df["high"] + self.df["close"] )/ 3
+    self.df["TP_prev"] = self.df["TP"].shift(1)
+    self.df["PORN"] = np.zeros(len(self.df))
+    self.df.loc[self.df["TP"] > self.df["TP_prev"], "PORN"] = np.float(1)
+    mfi_values = [np.nan for i in range(time_period)]
+    self.df["RMF"] = self.df["TP"] * self.df["volume"]
+    for i in range(time_period, len(self.df)):
+      pmf, nmf = 0, 0
+      for j in range(i-time_period+1, i+1):
+        if self.df["RMF"][j] is np.nan:
+          continue
+        if self.df["PORN"][j] == 0.0:
+          nmf += self.df["RMF"][j]
+        else:
+          pmf += self.df["RMF"][j]
+      mfratio = pmf / (nmf+0.0000001)
+
+      mfi_values.append(100 - (100 / (1 + mfratio)))
+    df["MFI"] = mfi_values
+
+
+
