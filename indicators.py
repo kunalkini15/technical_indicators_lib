@@ -251,44 +251,44 @@ class ForceIndex:
     df["fi"] = self.df["FI"].ewm(span=time_period).mean()
 
 class WilliamsR:
-  def __init__(self):
-    self.df = None
+    def __init__(self):
+        self.df = None
 
-  def info(self):
-    info = ("Williams R is tries to determine overbought and oversold levels of an asset")
-    return info
-    
+    def info(self):
+        info = ("Williams R is tries to determine overbought and oversold levels of an asset")
+        return info
+        
 
-  def get_value_df(self, df, time_period=14):
-    self.df = df.copy()
-    self.df["highest high"] = self.df["high"].rolling(window=time_period).max()
-    self.df["lowest low"] = self.df["low"].rolling(window=time_period).min()
-    df["Williams%R"] = 100 * (self.df["close"] - self.df["highest high"]) / (self.df["highest high"] - self.df["lowest low"])
+    def get_value_df(self, df, time_period=14):
+        self.df = df.copy()
+        self.df["highest high"] = self.df["high"].rolling(window=time_period).max()
+        self.df["lowest low"] = self.df["low"].rolling(window=time_period).min()
+        df["Williams%R"] = 100 * (self.df["close"] - self.df["highest high"]) / (self.df["highest high"] - self.df["lowest low"])
 
-  def get_value_list(self, close_values, high_values, low_values, time_period=14):
-    wil_values=[np.nan for i in range(time_period)]
-    for i in range(time_period, len(close_values)):
-      highest_high = np.max(high_values[i-time_period+1: i+1])
-      lowest_low = np.min(low_values[i-time_period+1 : i+1])
-      current_r_value = 100 * (close_values[i] - highest_high) / (highest_high - lowest_low)
-      wil_values.append(current_r_value)
-    return wil_values
+    def get_value_list(self, close_values, high_values, low_values, time_period=14):
+        wil_values=[np.nan for i in range(time_period)]
+        for i in range(time_period, len(close_values)):
+        highest_high = np.max(high_values[i-time_period+1: i+1])
+        lowest_low = np.min(low_values[i-time_period+1 : i+1])
+        current_r_value = 100 * (close_values[i] - highest_high) / (highest_high - lowest_low)
+        wil_values.append(current_r_value)
+        return wil_values
 
 class MassIndex:
-  def __init__(self):
-    self.df = None
+    def __init__(self):
+        self.df = None
 
-  def info(self):
-    info = ("Mass index tries to determine the range of high and low values over a specified period of time")
-    return info
+    def info(self):
+        info = ("Mass index tries to determine the range of high and low values over a specified period of time")
+        return info
 
-  def get_value_df(self, df, time_period=25, ema_time_period=9):
-    self.df = df.copy()
-    self.df["difference"] = self.df["high"] - self.df["low"]
-    self.df["difference_EMA"] = self.df["difference"].ewm(span=ema_time_period).mean()
-    self.df["difference_double_EMA"] = self.df["difference_EMA"].ewm(span=ema_time_period).mean()
-    self.df["MI"] = self.df["difference_EMA"] / self.df["difference_double_EMA"]
-    df["MI"] = self.df["MI"].rolling(window=time_period).sum()
+    def get_value_df(self, df, time_period=25, ema_time_period=9):
+        self.df = df.copy()
+        self.df["difference"] = self.df["high"] - self.df["low"]
+        self.df["difference_EMA"] = self.df["difference"].ewm(span=ema_time_period).mean()
+        self.df["difference_double_EMA"] = self.df["difference_EMA"].ewm(span=ema_time_period).mean()
+        self.df["MI"] = self.df["difference_EMA"] / self.df["difference_double_EMA"]
+        df["MI"] = self.df["MI"].rolling(window=time_period).sum()
 
 class MedianPrice:
     def __init__(self):
@@ -348,4 +348,178 @@ class MoneyFlowIndex:
     df["MFI"] = mfi_values
 
 
+
+class MovingAverageConvergenceDivergence:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("")
+        return info
+        
+
+    def get_value_df(self, df):
+        self.df = df.copy()
+        self.df["26EWMA"] = self.df["close"].ewm(span=26).mean()
+        self.df["12EWMA"] = self.df["close"].ewm(span=12).mean()
+
+        df["MACD"] = self.df["26EWMA"] - self.df["12EWMA"]
+        df["MACD_signal_line"] = df["MACD"].ewm(span=9).mean()
+
+
+class NegativeDirectionIndicator:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("")
+        return info
+    
+
+    def get_value_df(self, df, time_period=14):
+        self.df = df.copy()
+        self.df["DM-"] = np.zeros(len(df))
+        self.df["low_prev"] = self.df["low"].shift(1)
+        self.df["high_prev"] = self.df["high"].shift(1)
+
+
+        self.df.loc[(self.df["low_prev"]-self.df["low"]) > (self.df["high"] - self.df["high_prev"]), "DM-"] = self.df["low_prev"] - self.df["low"]
+
+        self.df["DM-smoothed"] = self.df["DM-"].rolling(window=time_period).sum()
+
+        if "ATR" not in self.df.columns:
+            AverageTrueRange().get_value_df(self.df)
+
+        df["DI-"] = self.df["DM-smoothd"] / self.df["ATR"]
+
+class NegativeVolumeIndex:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("")
+        return info
+    
+
+    def get_value_df(self, df,  starting_value=100):
+        nvi_values = [starting_value]
+
+        for i in range(1, len(df)):
+            if df.iloc[i]["volume"] >= df.iloc[i-1]["volume"]:
+                nvi_values.append(nvi_values[i-1])
+            else:
+                nvi_values.append(nvi_values[i-1] * ( 1+ ((df.iloc[i]["close"] - df.iloc[i-1]["close"]) / df.iloc[i-1]["close"] )))
+        
+        df["NVI"] = nvi_values
+
+class OnBalanceVolume:
+  def __init__(self):
+    self.df = None
+
+  def info(self):
+    info = ("")
+    return info
+    
+
+    def on_balance_volume(self, df):
+        obv_values = [df.iloc[0]["volume"]]
+        for i in range(1, len(df)):
+            if df.iloc[i]["close"] > df.iloc[i-1]["close"]:
+                obv_values.append(obv_values[i-1] + df.iloc[i]["volume"])
+            elif df.iloc[i]["close"] < df.iloc[i-1]["close"]:
+                obv_values.append(obv_values[i-1] - df.iloc[i]["volume"])
+            else:
+                obv_values.append(obv_values[i-1])
+        
+        df["OBV"] = obv_values
+
+class PositiveDirectionIndicator:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("")
+        return info
+    
+
+    def get_value_df(self, df, time_period=14):
+        self.df = df.copy()
+        self.df["DM+"] = np.zeros(len(df))
+        self.df["low_prev"] = self.df["low"].shift(1)
+        self.df["high_prev"] = self.df["high"].shift(1)
+
+
+        self.df.loc[(self.df["low_prev"]-self.df["low"]) < (self.df["high"] - self.df["high_prev"]), "DM-"] = self.df["high"] - self.df["high_prev"]
+
+        self.df["DM+smoothed"] = self.df["DM+"].rolling(window=time_period).sum()
+
+        if "ATR" not in self.df.columns:
+            AverageTrueRange().get_value_df(self.df)
+
+        df["DI-"] = self.df["DM+smoothd"] / self.df["ATR"]
+    
+class PositiveVolumeIndex:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("")
+        return info
+    
+
+    def get_value_df(self, df, starting_value=100):
+        pvi_values = [starting_value]
+
+        for i in range(1, len(df)):
+            if df.iloc[i]["volume"] <= df.iloc[i-1]["volume"]:
+                pvi_values.append(pvi_values[i-1])
+            else:
+                pvi_values.append( (1 + ((df.iloc[i]["close"] -df.iloc[i-1]["close"]) / df.iloc[i-1]["close"])) * pvi_values[i-1])
+        
+        df["PVI"] = pvi_values
+
+class PriceVolumeTrend:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("")
+        return info
+    
+    def get_value_df(self, df):
+        pvt_values = [df.iloc[0]["volume"]]
+        for i in range(1, len(df)):
+            pvt_values.append((((df.iloc[i]["close"] - df.iloc[i-1]["close"]) / df.iloc[i-1]["close"]) * df.iloc[i]["volume"]) + pvt_values[i-1])
+
+        df["PVT"] = pvt_values
+
+class PriceChannels:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("")
+        return info
+    
+    def get_value_df(self, df, percent_value=6, ema_period=21):
+        self.df = df.copy()
+        self.df["EMA_FOR_PC"] = df["close"].ewm(span=ema_period).mean()
+
+        df["PC_upper"] = self.df["EMA_FOR_PC"] * (1 + (percent_value / 100))
+        df["PC_lower"] = self.df["EMA_FOR_PC"] * (1 - (percent_value / 100))
+
+class PriceOscillator:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("")
+        return info
+    
+    def price_oscillator(self, df, short_ema_period=9, long_ema_period=26):
+        self.df = df.copy()
+        self.df["Short_EMA"] = self.df["close"].ewm(span=short_ema_period).mean()
+        self.df["Long_EMA"] = self.df["close"].ewm(span=long_ema_period).mean()
+
+        df["PO"] = ((self.df["Short_EMA"] - self.df["Long_EMA"]) / self.df["Long_EMA"]) * 100
 
