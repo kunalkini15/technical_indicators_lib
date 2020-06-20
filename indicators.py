@@ -268,10 +268,10 @@ class WilliamsR:
     def get_value_list(self, close_values, high_values, low_values, time_period=14):
         wil_values=[np.nan for i in range(time_period)]
         for i in range(time_period, len(close_values)):
-        highest_high = np.max(high_values[i-time_period+1: i+1])
-        lowest_low = np.min(low_values[i-time_period+1 : i+1])
-        current_r_value = 100 * (close_values[i] - highest_high) / (highest_high - lowest_low)
-        wil_values.append(current_r_value)
+            highest_high = np.max(high_values[i-time_period+1: i+1])
+            lowest_low = np.min(low_values[i-time_period+1 : i+1])
+            current_r_value = 100 * (close_values[i] - highest_high) / (highest_high - lowest_low)
+            wil_values.append(current_r_value)
         return wil_values
 
 class MassIndex:
