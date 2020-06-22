@@ -516,10 +516,81 @@ class PriceOscillator:
         info = ("")
         return info
     
-    def price_oscillator(self, df, short_ema_period=9, long_ema_period=26):
+    def get_value_df(self, df, short_ema_period=9, long_ema_period=26):
         self.df = df.copy()
         self.df["Short_EMA"] = self.df["close"].ewm(span=short_ema_period).mean()
         self.df["Long_EMA"] = self.df["close"].ewm(span=long_ema_period).mean()
 
         df["PO"] = ((self.df["Short_EMA"] - self.df["Long_EMA"]) / self.df["Long_EMA"]) * 100
+
+class RateOfChange:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("")
+        return info
+    
+    def get_value_df(self, df, time_period=7):
+        self.df = df.copy()
+        self.df["close_prev"] = self.df["close"].shift(time_period)
+
+        df["ROC"] = (self.df["close"] - self.df["close_prev"]) / self.df["close_prev"]
+
+class RelativeStrengthIndex:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("")
+        return info
+    
+    def get_value_df(self, df, time_period=14):
+        self.df = df.copy()
+        self.df["close_prev"] = self.df["close"].shift(1)
+        self.df["GAIN"] = np.zeros(len(self.df))
+        self.df["LOSS"] = np.zeros(len(self.df))
+
+        self.df.loc[self.df["close"] > self.df["close_prev"], "GAIN"] = self.df["close"] - self.df["close_prev"]
+        self.df.loc[self.df["close_prev"] > self.df["close"], "LOSS"] = self.df["close_prev"] - self.df["close"]
+        self.df["AVG_GAIN"] = self.df["GAIN"].ewm(span=time_period).mean()
+        self.df["AVG_LOSS"] = self.df["LOSS"].ewm(span=time_period).mean()
+
+        self.df["RS"] = self.df["AVG_GAIN"] / (self.df["AVG_LOSS"] + 0.000001) # to avoid divide by zero
+
+        df["RSI"] = 100 - ((100 / (1 + self.df["RS"])))
+
+
+class StandardDeviationVarianceAndVolatility:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("")
+        return info
+    
+    def get_value_df(self, df, time_period=21):
+        self.df = df.copy()
+        self.df["SMA"] = self.df["close"].rolling(window=time_period).mean()
+        df["SV"] = (self.df["close"] - self.df["SMA"] ) ** 2
+        df["SV"] = df["SV"].rolling(window=time_period).mean()
+
+        df["SD"] = np.sqrt(df["SV"])
+
+        df["VLT"] = df["SD"] / df["SV"] 
+
+class StochasticKAndD:
+    def __init__(self):
+        self.df = None
+
+    def info(self):
+        info = ("")
+        return info
+    
+    def get_value_df(self, df, time_period=14):
+        self.df = df.copy()
+        self.df["highest high"] = self.df["high"].rolling(window=time_period).max()
+        self.df["lowest low"] = self.df["low"].rolling(window=time_period).min()
+        df["stoc_k"] = 100* ((self.df["close"] - self.df["lowest low"]) / (self.df["highest high"] - self.df["lowest low"]))
+        df["stoc_d"] = df["stoc_k"].rolling(window=3).mean()
 
