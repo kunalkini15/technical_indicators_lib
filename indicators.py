@@ -279,23 +279,40 @@ class ChaikinOscillator:
         self.df["AD_long"] = self.df["AD"].ewm(span=long_time_period).mean()
 
         df["CHO"] = self.df["AD_short"] - self.df["AD_long"]
+        self.df = pd.DataFrame(None)
 
-    def get_value_list(self, close_values, high_values, low_values, short_time_period=3, long_time_period=10):
+    # def get_value_list(self, high_values, low_values, close_values, short_time_period=3, long_time_period=10):
+    #     self.df = pd.DataFrame({
+    #         "close": close_values,
+    #         "high": high_values,
+    #         "low": low_values
+    #     })
+
+    #     self.df["AD"] = ((2 * self.df["close"] - (self.df["high"] + self.df["low"])
+    #                       ) / (self.df["high"] - self.df["low"])) * self.df["volume"]
+    #     self.df["AD_short"] = self.df["AD"].ewm(span=short_time_period).mean()
+    #     self.df["AD_long"] = self.df["AD"].ewm(span=long_time_period).mean()
+    #     self.df["CHO"] = self.df["AD_short"] - self.df["AD_long"]
+
+    #     cho_values = self.df["CHO"]
+    #     self.df = None
+
+    #     return cho_values
+
+    def get_value_list(self, high_values, low_values, close_values, short_time_period=3, long_time_period=10):
         self.df = pd.DataFrame({
-            "close": close_values,
             "high": high_values,
-            "low": low_values
+            "low": low_values,
+            "close": close_values
         })
-
         self.df["AD"] = ((2 * self.df["close"] - (self.df["high"] + self.df["low"])
                           ) / (self.df["high"] - self.df["low"])) * self.df["volume"]
         self.df["AD_short"] = self.df["AD"].ewm(span=short_time_period).mean()
         self.df["AD_long"] = self.df["AD"].ewm(span=long_time_period).mean()
-        self.df["CHO"] = self.df["AD_short"] - self.df["AD_long"]
 
-        cho_values = self.df["CHO"]
-        self.df = None
+        cho_values = self.df["AD_short"] - self.df["AD_long"]
 
+        self.df =  pd.DataFrame(None)
         return cho_values
 
 
@@ -316,6 +333,7 @@ class ChaikinVolatility:
             time_period)
         df["CHV"] = (self.df["difference_EMA"] - self.df["difference_EMA_n_periods_ago"]
                      ) / self.df["difference_EMA_n_periods_ago"] * 100
+        self.df = pd.DataFrame(None)
 
     def get_value_list(self, high_values, low_values, time_period=10):
         self.df = pd.DataFrame({
@@ -331,7 +349,7 @@ class ChaikinVolatility:
         self.df["CHV"] = (self.df["difference_EMA"] - self.df["difference_EMA_n_periods_ago"]
                           ) / self.df["difference_EMA_n_periods_ago"] * 100
         chv_values = self.df["CHV"]
-        self.df = None
+        self.df = pd.DataFrame(None)
         return chv_values
 
 
@@ -348,6 +366,7 @@ class DetrendPriceOscillator:
         self.df["DPO_SMA"] = df["close"].rolling(
             window=int(time_period/2 + 1)).mean()
         df["DPO"] = df["close"] - self.df["DPO_SMA"]
+        self.df = pd.DataFrame(None)
 
     def get_value_list(self, close_values, time_period=21):
         self.df["close"] = close_values
@@ -356,7 +375,7 @@ class DetrendPriceOscillator:
         self.df["DPO"] = self.df["close"] - self.df["DPO_SMA"]
 
         dpo_values = self.df["DPO"]
-        self.df = None
+        self.df = pd.DataFrame(None)
         return dpo_values
 
 
@@ -377,16 +396,32 @@ class EaseOfMovement:
             (df["volume"] / volume_divisor) / (df["high"] - df["low"]))
 
         df["EMV"] = self.df["MIDPT"] / self.df["BOXRATIO"]
+        self.df = pd.DataFrame(None)
 
+    # def get_value_list(self, high_values, low_values, volume_values, volume_divisor=1000000):
+    #     emv_values = [np.nan]
+    #     for i in range(1, len(df)):
+    #         mid_pt_move = ((high_values[i] + low_values[i])/2) - \
+    #             ((high_values[i-1] + low_values[i-1]) / 2)
+    #         box_ratio = (volume_values[i] / volume_divisor) / \
+    #             (high_values[i] - low_values[i])
+    #         emv_values.append(mid_pt_move / box_ratio)
+
+    #     return emv_values
     def get_value_list(self, high_values, low_values, volume_values, volume_divisor=1000000):
-        emv_values = [np.nan]
-        for i in range(1, len(df)):
-            mid_pt_move = ((high_values[i] + low_values[i])/2) - \
-                ((high_values[i-1] + low_values[i-1]) / 2)
-            box_ratio = (volume_values[i] / volume_divisor) / \
-                (high_values[i] - low_values[i])
-            emv_values.append(mid_pt_move / box_ratio)
+        self.df = pd.DataFrame({
+            "high": high_values,
+            "low": low_values,
+            "volume": volume_values
+        })
+        self.df["H+L"] = self.df["high"] + self.df["low"]
+        self.df["H+L_prev"] = self.df["H+L"].shift(1)
+        self.df["MIDPT"] = (self.df["H+L"] / 2 - self.df["H+L_prev"] / 2)
+        self.df["BOXRATIO"] = (
+            (self.df["volume"] / volume_divisor) / (self.df["high"] - self.df["low"]))
 
+        emv_values = self.df["MIDPT"] / self.df["BOXRATIO"]
+        self.df = pd.DataFrame(None)
         return emv_values
 
 
@@ -404,6 +439,8 @@ class ForceIndex:
         df["fi"] = (df["close"] -
                     self.df["close_prev"]) * df["volume"]
         df["fi"] = df["fi"].ewm(span=time_period).mean()
+        self.df = pd.DataFrame(None)
+
 
     def get_value_dist(self, close_values, volume_values, time_period=14):
         self.df = pd.DataFrame({
@@ -416,7 +453,7 @@ class ForceIndex:
         self.df["fi"] = self.df["fi"].ewm(span=time_period).mean()
 
         fi_values = self.df["fi"]
-        self.df = None
+        self.df = pd.DataFrame(None)
         return fi_values
 
 
@@ -436,16 +473,32 @@ class WilliamsR:
             window=time_period).min()
         df["Williams%R"] = 100 * (df["close"] - self.df["highest high"]) / \
             (self.df["highest high"] - self.df["lowest low"])
+        self.df = pd.DataFrame(None)
 
-    def get_value_list(self, close_values, high_values, low_values, time_period=14):
-        wil_values = [np.nan for i in range(time_period)]
-        for i in range(time_period, len(close_values)):
-            highest_high = np.max(high_values[i-time_period+1: i+1])
-            lowest_low = np.min(low_values[i-time_period+1: i+1])
-            current_r_value = 100 * \
-                (close_values[i] - highest_high) / (highest_high - lowest_low)
-            wil_values.append(current_r_value)
-        return wil_values
+
+    # def get_value_list(self, close_values, high_values, low_values, time_period=14):
+    #     wil_values = [np.nan for i in range(time_period)]
+    #     for i in range(time_period, len(close_values)):
+    #         highest_high = np.max(high_values[i-time_period+1: i+1])
+    #         lowest_low = np.min(low_values[i-time_period+1: i+1])
+    #         current_r_value = 100 * \
+    #             (close_values[i] - highest_high) / (highest_high - lowest_low)
+    #         wil_values.append(current_r_value)
+    #     return wil_values
+    def get_value_list(self, high_values, low_values, close_values, time_period=14):
+        self.df = pd.DataFrame({
+            "high": high_values,
+            "low": low_values,
+            "close": close_values
+        })
+        self.df["highest high"] = self.df["high"].rolling(
+            window=time_period).max()
+        self.df["lowest low"] = self.df["low"].rolling(
+            window=time_period).min()
+        williams_r_values = 100 * (self.df["close"] - self.df["highest high"]) / \
+            (self.df["highest high"] - self.df["lowest low"])
+        self.df = pd.DataFrame(None)
+        return williams_r_values      
 
 
 class MassIndex:
@@ -466,6 +519,8 @@ class MassIndex:
         df["MI"] = self.df["difference_EMA"] / \
             self.df["difference_double_EMA"]
         df["MI"] = df["MI"].rolling(window=time_period).sum()
+        self.df = pd.DataFrame(None)
+
 
     def get_value_list(self, high_values, low_values, time_period=25, ema_time_period=9):
         self.df = pd.DataFrame({
@@ -482,7 +537,7 @@ class MassIndex:
         self.df["MI"] = self.df["MI"].rolling(window=time_period).sum()
 
         mi_values = self.df["MI"]
-        self.df = None
+        self.df = pd.DataFrame(None)
         return mi_values
 
 
@@ -504,7 +559,7 @@ class MedianPrice:
         })
         self.df["MED"] = (self.df["high"] + self.df["low"]) / 2
         med_values = self.df["MED"]
-        self.df = None
+        self.df = pd.DataFrame(None)
         return med_values
 
 
@@ -520,13 +575,15 @@ class Momentum:
     def get_value_df(self, df, time_period=1):
         self.df["close_prev"] = df["close"].shift(time_period)
         df["MOM"] = df["close"] - self.df["close_prev"]
+        self.df = pd.DataFrame(None)
+
 
     def get_value_list(self, close_values, time_period=1):
         self.df["close"] = close_values
         self.df["prev_close"] = self.df["close"].shift(time_period)
         self.df["MOM"] = self.df["close"] - self.df["close_prev"]
         mom_values = self.df["MOM"]
-        self.df = None
+        self.df = pd.DataFrame(None)
         return mom_values
 
 
