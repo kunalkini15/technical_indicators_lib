@@ -174,6 +174,7 @@ class AccumulationDistribution:
 
 #         df["ATR"] = avg_true_range
 
+
 class AverageTrueRange:
     def __init__(self):
         self.df = pd.DataFrame()
@@ -187,7 +188,8 @@ class AverageTrueRange:
         self.df["low"] = df["low"]
         self.df["close"] = df["close"]
         self.df["close_prev"] = self.df["close"].shift(1)
-        self.df["TR"] = np.max(self.df["high"], self.df["close_prev"]) - np.min(self.df["low"] - self.df["close_prev"])
+        self.df["TR"] = np.max(self.df["high"], self.df["close_prev"]) - \
+            np.min(self.df["low"] - self.df["close_prev"])
 
         df["ATR"] = self.df["TR"].ewm(span=time_period).mean()
         self.df = pd.DataFrame(None)
@@ -200,10 +202,12 @@ class AverageTrueRange:
         })
 
         self.df["close_prev"] = self.df["close"].shift(1)
-        self.df["TR"] = np.max(self.df["high"], self.df["close_prev"]) - np.min(self.df["low"] - self.df["close_prev"])
+        self.df["TR"] = np.max(self.df["high"], self.df["close_prev"]) - \
+            np.min(self.df["low"] - self.df["close_prev"])
 
         atr_values = self.df["TR"].ewm(span=time_period).mean()
         self.df = pd.DataFrame(None)
+
 
 class ChaikinMoneyFlow:
     def __init__(self):
@@ -250,7 +254,7 @@ class ChaikinMoneyFlow:
         })
 
         self.df["CLV"] = (2 * self.df["close"] - (self.df["high"] +
-                                             self.df["low"])) / (self.df["high"] - self.df["low"])
+                                                  self.df["low"])) / (self.df["high"] - self.df["low"])
         self.df["CLV_VOL"] = self.df["CLV"] * self.df["volume"]
         self.df["CLV_VOL_SUM"] = self.df["CLV_VOL"].rolling(
             window=time_period).sum()
@@ -312,7 +316,7 @@ class ChaikinOscillator:
 
         cho_values = self.df["AD_short"] - self.df["AD_long"]
 
-        self.df =  pd.DataFrame(None)
+        self.df = pd.DataFrame(None)
         return cho_values
 
 
@@ -441,7 +445,6 @@ class ForceIndex:
         df["fi"] = df["fi"].ewm(span=time_period).mean()
         self.df = pd.DataFrame(None)
 
-
     def get_value_dist(self, close_values, volume_values, time_period=14):
         self.df = pd.DataFrame({
             "close": close_values,
@@ -475,7 +478,6 @@ class WilliamsR:
             (self.df["highest high"] - self.df["lowest low"])
         self.df = pd.DataFrame(None)
 
-
     # def get_value_list(self, close_values, high_values, low_values, time_period=14):
     #     wil_values = [np.nan for i in range(time_period)]
     #     for i in range(time_period, len(close_values)):
@@ -485,6 +487,7 @@ class WilliamsR:
     #             (close_values[i] - highest_high) / (highest_high - lowest_low)
     #         wil_values.append(current_r_value)
     #     return wil_values
+
     def get_value_list(self, high_values, low_values, close_values, time_period=14):
         self.df = pd.DataFrame({
             "high": high_values,
@@ -498,7 +501,7 @@ class WilliamsR:
         williams_r_values = 100 * (self.df["close"] - self.df["highest high"]) / \
             (self.df["highest high"] - self.df["lowest low"])
         self.df = pd.DataFrame(None)
-        return williams_r_values      
+        return williams_r_values
 
 
 class MassIndex:
@@ -520,7 +523,6 @@ class MassIndex:
             self.df["difference_double_EMA"]
         df["MI"] = df["MI"].rolling(window=time_period).sum()
         self.df = pd.DataFrame(None)
-
 
     def get_value_list(self, high_values, low_values, time_period=25, ema_time_period=9):
         self.df = pd.DataFrame({
@@ -576,7 +578,6 @@ class Momentum:
         self.df["close_prev"] = df["close"].shift(time_period)
         df["MOM"] = df["close"] - self.df["close_prev"]
         self.df = pd.DataFrame(None)
-
 
     def get_value_list(self, close_values, time_period=1):
         self.df["close"] = close_values
@@ -662,6 +663,21 @@ class MovingAverageConvergenceDivergence:
 
         df["MACD"] = self.df["26EWMA"] - self.df["12EWMA"]
         df["MACD_signal_line"] = df["MACD"].ewm(span=9).mean()
+        self.df = pd.DataFrame(None)
+
+    def get_value_list(self, close_values):
+        self.df = pd.DataFrame({
+            "close": close_values
+        })
+        self.df["26EWMA"] = self.df["close"].ewm(span=26).mean()
+        self.df["12EWMA"] = self.df["close"].ewm(span=12).mean()
+
+        self.df["MACD"] = self.df["26EWMA"] - self.df["12EWMA"]
+        self.df["MACD_signal_line"] = self.df["MACD"].ewm(span=9).mean()
+
+        macd_values, macd_signal_line_values = self.df["MACD"], self.df["MACD_signal_line"]
+        self.df = pd.DataFrame(None)
+        return macd_values, macd_signal_line_values
 
 
 class NegativeDirectionIndicator:
@@ -688,11 +704,36 @@ class NegativeDirectionIndicator:
             AverageTrueRange().get_value_df(self.df)
 
         df["DI-"] = self.df["DM-smoothd"] / self.df["ATR"]
+        self.df = pd.DataFrame(None)
+
+    def get_value_df(self, high_values, low_values, time_period=14):
+        self.df = pd.DataFrame({
+            "high": high_values,
+            "low": low_values
+        })
+
+        self.df["DM-"] = np.zeros(len(self.df))
+        self.df["low_prev"] = self.df["low"].shift(1)
+        self.df["high_prev"] = self.df["high"].shift(1)
+
+        self.df.loc[(self.df["low_prev"]-self.df["low"]) > (self.df["high"] -
+                                                            self.df["high_prev"]), "DM-"] = self.df["low_prev"] - self.df["low"]
+
+        self.df["DM-smoothed"] = self.df["DM-"].rolling(
+            window=time_period).sum()
+
+        if "ATR" not in self.df.columns:
+            AverageTrueRange().get_value_df(self.df)
+
+        di_minus_values = self.df["DM-smoothd"] / self.df["ATR"]
+
+        self.df = pd.DataFrame(None)
+        return di_minus_values
 
 
 class NegativeVolumeIndex:
     def __init__(self):
-        self.df = None
+        self.df = pd.DataFrame(None)
 
     def info(self):
         info = ("Negative Volume Index helps in identifying trends and reversals.")
@@ -710,6 +751,24 @@ class NegativeVolumeIndex:
 
         df["NVI"] = nvi_values
 
+    def get_value_df(self, close_values, volume_values, starting_value=100):
+
+        self.df = pd.DataFrame({
+            "close": close_values,
+            "volume": volume_values
+        })
+
+        nvi_values = [starting_value]
+        for i in range(1, len(df)):
+            if self.df.iloc[i]["volume"] >= self.df.iloc[i-1]["volume"]:
+                nvi_values.append(nvi_values[i-1])
+            else:
+                nvi_values.append(
+                    nvi_values[i-1] * (1 + ((self.df.iloc[i]["close"] - self.df.iloc[i-1]["close"]) / self.df.iloc[i-1]["close"])))
+
+        self.df = pd.DataFrame(None)
+        return nvi_values
+
 
 class OnBalanceVolume:
     def __init__(self):
@@ -719,7 +778,7 @@ class OnBalanceVolume:
         info = ("On Balance Volume provides the signal whether the volume is flowing in or out of a given security.")
         return info
 
-        def on_balance_volume(self, df):
+        def get_value_df(self, df):
             obv_values = [df.iloc[0]["volume"]]
             for i in range(1, len(df)):
                 if df.iloc[i]["close"] > df.iloc[i-1]["close"]:
@@ -730,6 +789,25 @@ class OnBalanceVolume:
                     obv_values.append(obv_values[i-1])
 
             df["OBV"] = obv_values
+
+        def get_value_df(self, close_values, volume_values):
+            self.df = pd.DataFrame({
+                "close": close_values,
+                "volume": volume_values
+            })
+            obv_values = [self.df.iloc[0]["volume"]]
+            for i in range(1, len(self.df)):
+                if self.df.iloc[i]["close"] > self.df.iloc[i-1]["close"]:
+                    obv_values.append(
+                        obv_values[i-1] + self.df.iloc[i]["volume"])
+                elif self.df.iloc[i]["close"] < self.df.iloc[i-1]["close"]:
+                    obv_values.append(
+                        obv_values[i-1] - self.df.iloc[i]["volume"])
+                else:
+                    obv_values.append(obv_values[i-1])
+
+            self.df = pd.DataFrame(None)
+            return obv_values
 
 
 class PositiveDirectionIndicator:
@@ -755,7 +833,31 @@ class PositiveDirectionIndicator:
         if "ATR" not in self.df.columns:
             AverageTrueRange().get_value_df(self.df)
 
-        df["DI-"] = self.df["DM+smoothd"] / self.df["ATR"]
+        df["DI+"] = self.df["DM+smoothed"] / self.df["ATR"]
+        self.df = pd.DataFrame(None)
+
+    def get_value_list(self, high_values, low_values, time_period=14):
+        self.df = pd.DataFrame({
+            "high": high_values,
+            "low": low_values
+        })
+        self.df["DM+"] = np.zeros(len(self.df))
+        self.df["low_prev"] = self.df["low"].shift(1)
+        self.df["high_prev"] = self.df["high"].shift(1)
+
+        self.df.loc[(self.df["low_prev"]-self.df["low"]) < (self.df["high"] -
+                                                            self.df["high_prev"]), "DM-"] = self.df["high"] - self.df["high_prev"]
+
+        self.df["DM+smoothed"] = self.df["DM+"].rolling(
+            window=time_period).sum()
+
+        if "ATR" not in self.df.columns:
+            AverageTrueRange().get_value_df(self.df)
+
+        df_plus_values = self.df["DM+smoothed"] / self.df["ATR"]
+
+        self.df = pd.DataFrame(None)
+        return df_plus_values
 
 
 class PositiveVolumeIndex:
@@ -775,9 +877,23 @@ class PositiveVolumeIndex:
             else:
                 pvi_values.append(
                     (1 + ((df.iloc[i]["close"] - df.iloc[i-1]["close"]) / df.iloc[i-1]["close"])) * pvi_values[i-1])
-
         df["PVI"] = pvi_values
 
+    def get_value_list(self, close_values, volume_values, starting_value=100):
+        pvi_values = [starting_value]
+        self.df = pd.DataFrame({
+            "close": close_values,
+            "volume": volume_values
+        })
+        for i in range(1, len(df)):
+            if self.df.iloc[i]["volume"] <= self.df.iloc[i-1]["volume"]:
+                pvi_values.append(pvi_values[i-1])
+            else:
+                pvi_values.append(
+                    (1 + ((self.df.iloc[i]["close"] - self.df.iloc[i-1]["close"]) / self.df.iloc[i-1]["close"])) * pvi_values[i-1])
+
+        self.df = pd.DataFrame(None)
+        return pvi_values
 
 class PriceVolumeTrend:
     def __init__(self):
@@ -794,6 +910,19 @@ class PriceVolumeTrend:
                                 df.iloc[i-1]["close"]) * df.iloc[i]["volume"]) + pvt_values[i-1])
 
         df["PVT"] = pvt_values
+    
+    def get_value_list(self, close_values, volume_values):
+        self.df = pd.DataFrame({
+            "close": close_values,
+            "volume": volume_values
+        })
+        pvt_values = [self.df.iloc[0]["volume"]]
+        for i in range(1, len(self.df)):
+            pvt_values.append((((self.df.iloc[i]["close"] - self.df.iloc[i-1]["close"]) /
+                                self.df.iloc[i-1]["close"]) * self.df.iloc[i]["volume"]) + pvt_values[i-1])
+
+        self.df = pd.DataFrame(None)
+        return pvt_values
 
 
 class PriceChannels:
@@ -810,6 +939,19 @@ class PriceChannels:
 
         df["PC_upper"] = self.df["EMA_FOR_PC"] * (1 + (percent_value / 100))
         df["PC_lower"] = self.df["EMA_FOR_PC"] * (1 - (percent_value / 100))
+    
+    def get_value_list(self, close_values, percent_value=6, ema_period=21):
+        self.df = pd.DataFrame({
+            "close": close_values
+        })
+
+        self.df["EMA_FOR_PC"] = self.df["close"].ewm(span=ema_period).mean()
+
+        pc_upper_values = self.df["EMA_FOR_PC"] * (1 + (percent_value / 100))
+        pc_lower_values = self.df["EMA_FOR_PC"] * (1 - (percent_value / 100))
+
+        self.df = pd.DataFrame(None)
+        return pc_upper_values, pc_lower_values
 
 
 class PriceOscillator:
@@ -828,6 +970,23 @@ class PriceOscillator:
 
         df["PO"] = ((self.df["Short_EMA"] - self.df["Long_EMA"]) /
                     self.df["Long_EMA"]) * 100
+                
+        self.df = pd.DataFrame(None)
+                
+    def get_value_list(self, close_values, short_ema_period=9, long_ema_period=26):
+        self.df = pd.DataFrame({
+            "close": close_values
+        })
+
+        self.df["Short_EMA"] = self.df["close"].ewm(
+            span=short_ema_period).mean()
+        self.df["Long_EMA"] = self.df["close"].ewm(span=long_ema_period).mean()
+
+        po_values = ((self.df["Short_EMA"] - self.df["Long_EMA"]) /
+                    self.df["Long_EMA"]) * 100
+        self.df = pd.DataFrame(None)
+
+        return po_values
 
 
 class RateOfChange:
@@ -843,6 +1002,18 @@ class RateOfChange:
 
         df["ROC"] = (df["close"] - self.df["close_prev"]) / \
             self.df["close_prev"]
+        self.df = pd.DataFrame(None)
+    
+    def get_value_list(self, close_values, time_period=7):
+        self.df = pd.DataFrame({
+            "close": close_values
+        })
+        self.df["close_prev"] = self.df["close"].shift(time_period)
+
+        roc_values = (self.df["close"] - self.df["close_prev"]) / \
+            self.df["close_prev"]
+        self.df = pd.DataFrame(None)
+        return roc_values
 
 
 class RelativeStrengthIndex:
@@ -871,6 +1042,32 @@ class RelativeStrengthIndex:
 
         df["RSI"] = 100 - ((100 / (1 + self.df["RS"])))
 
+        self.df = pd.DataFrame(None)
+    
+    def get_value_list(self, close_values, time_period=14):
+        self.df = pd.DataFrame({
+            "close": close_values
+        })
+
+        self.df["close_prev"] = self.df["close"].shift(1)
+        self.df["GAIN"] = np.zeros(len(self.df))
+        self.df["LOSS"] = np.zeros(len(self.df))
+
+        self.df.loc[df["close"] > self.df["close_prev"],
+                    "GAIN"] = self.df["close"] - self.df["close_prev"]
+        self.df.loc[self.df["close_prev"] > self.df["close"],
+                    "LOSS"] = self.df["close_prev"] - self.df["close"]
+        self.df["AVG_GAIN"] = self.df["GAIN"].ewm(span=time_period).mean()
+        self.df["AVG_LOSS"] = self.df["LOSS"].ewm(span=time_period).mean()
+
+        self.df["RS"] = self.df["AVG_GAIN"] / \
+            (self.df["AVG_LOSS"] + 0.000001)  # to avoid divide by zero
+
+        rsi_values = 100 - ((100 / (1 + self.df["RS"])))
+
+        self.df = pd.DataFrame(None)
+        return rsi_values
+
 
 class StandardDeviationVarianceAndVolatility:
     def __init__(self):
@@ -888,6 +1085,25 @@ class StandardDeviationVarianceAndVolatility:
         df["SD"] = np.sqrt(df["SV"])
 
         df["VLT"] = df["SD"] / df["SV"]
+        self.df = pd.DataFrame(None)
+
+    def get_value_list(self, close_values, time_period=21):
+        self.df = pd.DataFrame({
+            "close": close_values
+        })
+        self.df["SMA"] = self.df["close"].rolling(window=time_period).mean()
+        self.df["SV"] = (self.df["close"] - self.df["SMA"]) ** 2
+        self.df["SV"] = self.df["SV"].rolling(window=time_period).mean()
+
+        self.df["SD"] = np.sqrt(df["SV"])
+
+        self.df["VLT"] = df["SD"] / df["SV"]
+
+        standard_variance, standard_deviation, volatility = self.df["SV"], self.df["SD"], self.df["VLT"]
+        self.df = pd.DataFrame(None)
+
+        return standard_variance, standard_deviation, volatility
+
 
 
 class StochasticKAndD:
@@ -907,6 +1123,24 @@ class StochasticKAndD:
         df["stoc_k"] = 100 * ((df["close"] - self.df["lowest low"]) /
                               (self.df["highest high"] - self.df["lowest low"]))
         df["stoc_d"] = df["stoc_k"].rolling(window=3).mean()
+        self.df = pd.DataFrame(None)
+
+    def get_value_list(self, high_values, low_values, close_values, time_period=14):
+        self.df = pd.DataFrame({
+            "high": high_values,
+            "low": low_values,
+            "close": close_values
+        })
+        self.df["highest high"] = self.df["high"].rolling(
+            window=time_period).max()
+        self.df["lowest low"] = self.df["low"].rolling(
+            window=time_period).min()
+        self.df["stoc_k"] = 100 * ((self.df["close"] - self.df["lowest low"]) /
+                            (self.df["highest high"] - self.df["lowest low"]))
+        self.df["stoc_d"] = self.df["stoc_k"].rolling(window=3).mean()
+
+        stochastic_k_values, stochastic_d_values = self.df["stoc_k"], self.df["stoc_d"]
+        return stochastic_k_values, stochastic_d_values
 
 
 class Trix:
@@ -926,6 +1160,22 @@ class Trix:
 
         df["trix"] = (self.df["EMA3"] - self.df["EMA_prev"]) / \
             self.df["EMA_prev"]
+        self.df = pd.DataFrame(None)
+    
+    def get_value_list(self, close_values, time_period=14):
+        self.df = pd.DataFrame({
+            "close": close_values
+        })
+        self.df["EMA1"] = self.df["close"].ewm(span=time_period).mean()
+        self.df["EMA2"] = self.df["EMA1"].ewm(span=time_period).mean()
+        self.df["EMA3"] = self.df["EMA2"].ewm(span=time_period).mean()
+        self.df["EMA_prev"] = self.df["EMA3"].shift(1)
+
+        trix_values = (self.df["EMA3"] - self.df["EMA_prev"]) / \
+            self.df["EMA_prev"]
+        self.df = pd.DataFrame(None)
+
+        return trix_values
 
 
 class TrueRange:
@@ -946,6 +1196,21 @@ class TrueRange:
             abs(df["low"] - self.df["prev_close"])
         )
 
+    def get_value_list(self, high_values, low_values, close_values):
+        self.df = pd.DataFrame({
+            "high": high_values,
+            "low": low_values,
+            "close": close_values
+        })
+        self.df["prev_close"] = self.df["close"].shift(1)
+
+        tr_values = max(
+            abs(self.df["high"] - self.df["low"]),
+            abs(self.df["high"] - self.df["prev_close"]),
+            abs(self.df["low"] - self.df["prev_close"])
+        )
+        self.df = pd.DataFrame(None)
+        return tr_values
 
 class TypicalPrice:
     def __init__(self):
@@ -958,7 +1223,17 @@ class TypicalPrice:
 
     def get_value_df(self, df):
         df["TYP"] = (df["high"] + df["low"] + df["close"]) / 3
+    
+    def get_value_list(self, high_values, low_values, close_values):
+        self.df = pd.DataFrame({
+            "high": high_values,
+            "low": low_values,
+            "close": close_values
+        })
+        typ_values = (self.df["high"] + self.df["low"] + self.df["close"]) / 3
 
+        self.df = pd.DataFrame(None)
+        return typ_values
 
 class vertical_horizontal_filter:
     def __init__(self):
@@ -980,6 +1255,25 @@ class vertical_horizontal_filter:
         self.df["DIF"] = self.df["DIF"].rolling(window=time_period).sum()
 
         df["VHF"] = self.df["HC-LC"] / self.df["DIF"]
+        self.df = pd.DataFrame(None)
+
+    def get_value_list(self, close_values, time_period=28):
+        self.df = pd.DataFrame({
+            "close": close_values
+        })
+        self.df["PC"] = self.df["close"].shift(1)
+        self.df["DIF"] = self.df["close"] - self.df["PC"]
+
+        self.df["HC"] = self.df["close"].rolling(window=time_period).max()
+        self.df["LC"] = self.df["close"].rolling(window=time_period).min()
+
+        self.df["HC-LC"] = abs(self.df["HC"] - self.df["LC"])
+
+        self.df["DIF"] = self.df["DIF"].rolling(window=time_period).sum()
+
+        vhf_values = self.df["HC-LC"] / self.df["DIF"]
+        self.df = pd.DataFrame(None)
+        return vhf_values
 
 
 class VolumeOscillator:
@@ -996,7 +1290,19 @@ class VolumeOscillator:
 
         df["VO"] = ((self.df["short_ema"] - self.df["long_ema"]) /
                     self.df["long_ema"]) * 100
+        self.df = pd.DataFrame(None)
 
+                
+    def get_value_list(self, volume_values, short_ema=9, long_ema=26):
+        self.df = pd.DataFrame({
+            "volume": volume_values
+        })
+        self.df["short_ema"] = self.df["volume"].ewm(span=short_ema).mean()
+        self.df["long_ema"] = self.df["volume"].ewm(span=long_ema).mean()
+
+        vo_values = ((self.df["short_ema"] - self.df["long_ema"]) /
+                    self.df["long_ema"]) * 100
+        self.df = pd.DataFrame(None)
 
 class VolumeRateOfChange:
     def __init__(self):
@@ -1010,11 +1316,20 @@ class VolumeRateOfChange:
         self.df["prev_volume"] = df["volume"].shift(time_period)
         df["ROCV"] = (df["volume"] - df["prev_volume"]
                       ) / df["prev_volume"] * 100
+        self.df = pd.DataFrame(None)
+    def get_value_list(self, volume_values, time_period=12):
+        self.df = pd.DataFrame({
+            "volume": volume_values
+        })
+        self.df["prev_volume"] = self.df["volume"].shift(time_period)
+        df["ROCV"] = (self.df["volume"] - self.df["prev_volume"]
+                      ) / self.df["prev_volume"] * 100
+        self.df = pd.DataFrame(None)
 
 
 class WeightedClose:
     def __init__(self):
-        self.df = None
+        self.df = pd.DataFrame(None)
 
     def info(self):
         info = ("")
@@ -1022,3 +1337,12 @@ class WeightedClose:
 
     def get_value_df(self, df):
         df["WCL"] = (df["high"] + df["low"] + (2 * df["close"])) / 4
+    
+    def get_value_list(self, high_values, low_values, close_values):
+        self.df = pd.DataFrame({
+            "high": high_values,
+            "low": low_values,
+            "close": close_values
+        })
+        wcl_values = (self.df["high"] + self.df["low"] + (2 * self.df["close"])) / 4
+
