@@ -1,2 +1,10 @@
-# technical-indicators
-Various technical indicators using pandas dataframe
+# Technical Indicators
+> Technical indicators library provides means to derive stock market technical indicators.
+provides multiple ways of deriving technical indicators using raw OHLCV(Open, High, Low, Close, Volume) values.
+
+## Installation
+
+```
+pip install  technical-indicators
+```
+
