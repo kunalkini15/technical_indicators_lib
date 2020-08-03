@@ -5,6 +5,6 @@ provides multiple ways of deriving technical indicators using raw OHLCV(Open, Hi
 ## Installation
 
 ```
-pip install  technical-indicators
+pip install  technical_indicators_lib
 ```
 
