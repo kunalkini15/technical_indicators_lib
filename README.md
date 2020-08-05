@@ -35,7 +35,29 @@ pip install  technical_indicators_lib
 ```
 
 ## Usage
+```
+# import dependencies
+import pandas as pd
+import numpy as np
 
+# importing an indicator class
+from technical_indicators_lib import OBV
+
+# instantiate the class
+obv = OBV()
+
+# load data into a dataframe df
+
+
+# Method 1: get the data by sending a dataframe
+df = obv.get_value_df(df)
+
+
+# Method 2: get the data by sending series values
+
+obv_values = obv.get_value_list(df["close"], df["volume])
+
+```
 
 
 
@@ -54,6 +76,8 @@ pip install -r requirements.txt
 
 ```
 
+then you are good to go. You can create a pull request or write to me at kunalkini15@gmail.com
+
 ## Todo
 
 - Divide indicators into separate modules, such as trend, momentum, volatility, volume, etc.
@@ -61,5 +85,11 @@ pip install -r requirements.txt
 - add tests.
 
 - Add more indicators.
+
+## Credits
+
+Developed by Kunal Kini K, a software engineer by profession and passion. 
+
+If you have any comments, feedbacks or queries, write to me at kunalkini15@gmail.com
 
 
