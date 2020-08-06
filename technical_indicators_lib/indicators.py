@@ -149,6 +149,124 @@ class ATR:
 
         return atr_values
 
+class BollingerBands:
+  """
+  Bollinger Bands Indicator
+  """
+
+  def __init__(self):
+    self.df = pd.DataFrame(None)
+
+  def get_value_df(self, df: pd.DataFrame, time_period: int = 20, std_dev_multiplier: int = 2):
+    """
+    Get The expected indicator in a pandas dataframe.
+
+    Args:
+        df(pandas.DataFrame): pandas Dataframe with high, low, and close values\n
+        time_period(int): look back time period to calculate moving average
+        std_dev_multiplier(int): constant value which will be multiplied by standard deviation
+
+    Returns:
+        pandas.DataFrame: new pandas dataframe adding bb_upper and bb_lower as two columns, preserving the columns which already exists\n
+    """
+
+    df["TYP"] = (df["high"] + df["low"] + df["close"] ) / 3
+    df["TYPMA"] = df["TYP"].rolling(window=time_period).mean()
+    df["TYPSD"] = df["TYP"].rolling(window=time_period).std()
+    df["bb_upper"] = df["TYPMA"] + std_dev_multiplier * df["TYPSD"]
+    df["bb_lower"] = df["TYPMA"] - std_dev_multiplier * df["TYPSD"]
+
+    df = df.drop(["TYP", "TYPMA", "TYPSD"], axis=1)
+
+    return df
+
+  def get_value_list(self, high_values: pd.Series, low_values: pd.Series, close_values: pd.Series, time_period: int = 20, std_dev_multiplier: int = 2):
+    """
+    Get The expected indicator in a pandas series.\n\n
+    Args:
+        high_values(pandas.Series): 'High' values\n
+        low_values(pandas.Series): 'Low' values\n
+        close_values(pandas.Series): 'Close' values\n
+        time_period(int): look back time period to calculate moving average
+        std_dev_multiplier(int): constant value which will be multiplied by standard deviation
+
+    Returns:
+        pandas.Series: A tuple containing bb_upper and bb_lower values
+    """
+
+    self.df = pd.DataFrame({
+        "high": high_values,
+        "low": low_values,
+        "close": close_values
+    })
+    self.df["TYP"] = (self.df["high"] + self.df["low"] + self.df["close"] ) / 3
+    self.df["TYPMA"] = self.df["TYP"].rolling(window=time_period).mean()
+    self.df["TYPSD"] = self.df["TYP"].rolling(window=time_period).std()
+    bb_upper = self.df["TYPMA"] + std_dev_multiplier * self.df["TYPSD"]
+    bb_lower = self.df["TYPMA"] - std_dev_multiplier * self.df["TYPSD"]
+
+    return bb_upper, bb_lower
+
+
+class CCI:
+  """
+  CCI -> Commodity Channel Index
+  """
+
+  def __init__(self):
+    self.df = pd.DataFrame(None)
+
+  def get_value_df(self, df: pd.DataFrame, time_period: int = 20, sd_multiplier: float = 0.015):
+    """
+    Get The expected indicator in a pandas dataframe.
+
+    Args:
+        df(pandas.DataFrame): pandas Dataframe with high, low, and close values\n
+        time_period(int): look back time period\n
+        sd_multiplier(float): constant value to be multiplied by standard deviation
+
+    Returns:
+        pandas.DataFrame: new pandas dataframe adding CCI as a new column, preserving the columns which already exists\n
+    """
+
+    df["TYP"] = (df["high"] + df["low"] + df["close"]) / 3
+    df["MA"] = df["TYP"].rolling(window=time_period).mean()
+    df["STD"] = df["TYP"].rolling(window=time_period).std()
+
+    df["CCI"] = ((df["TYP"] - df["MA"]) / (sd_multiplier * df["STD"]))
+
+    df = df.drop(["TYP", "MA", "STD"], axis=1)
+    return df
+
+  def get_value_list(self, high_values: pd.Series, low_values: pd.Series, close_values: pd.Series,  time_period: int = 20,  sd_multiplier: float = 0.015):
+    """
+    Get The expected indicator in a pandas series.\n\n
+    Args:
+        high_values(pandas.Series): 'High' values\n
+        low_values(pandas.Series): 'Low' values\n
+        close_values(pandas.Series): 'Close' values\n
+        time_period(int): look back time period\n
+        sd_multiplier(float): constant value to be multiplied by standard deviation
+
+    Returns:
+        pandas.Series: pandas series of CCI values
+    """
+
+    self.df = pd.DataFrame({
+        "high": high_values,
+        "low": low_values,
+        "close": close_values
+    })
+    self.df["TYP"] = (self.df["high"] + self.df["low"] + self.df["close"]) / 3
+    self.df["MA"] = self.df["TYP"].rolling(window=time_period).mean()
+    self.df["STD"] = self.df["TYP"].rolling(window=time_period).std()
+
+    cci_values = ((self.df["TYP"] - self.df["MA"]) / (sd_multiplier * self.df["STD"]))
+
+
+    self.df = pd.DataFrame(None)
+
+    return cci_values
 
 class CMF:
 
@@ -371,6 +489,62 @@ class CHV:
                       ) / self.df["difference_EMA_n_periods_ago"] * 100
         self.df = pd.DataFrame(None)
         return chv_values
+
+class DC:
+  """
+  DC -> Donchian Channel
+  """
+
+  def __init__(self):
+    self.df = pd.DataFrame(None)
+
+  def get_value_df(self, df: pd.DataFrame, time_period: int = 14):
+    """
+    Get The expected indicator in a pandas dataframe.
+
+    Args:
+        df(pandas.DataFrame): pandas Dataframe with high, low values\n
+        time_period(int): look back time period
+
+    Returns:
+        pandas.DataFrame: new pandas dataframe adding dc_upper, dc_middle and dc_lower as three columns, preserving the columns which already exists\n
+    """
+
+    df["dc_upper"] = df["high"].rolling(window=time_period).max()
+    df["dc_lower"] = df["low"].rolling(window=time_period).min()
+    df["dc_middle"] = (df["dc_upper"] + df["dc_lower"]) / 2
+
+    return df
+
+  def get_value_list(self, high_values: pd.Series, low_values: pd.Series, time_period: int = 14):
+    """
+    Get The expected indicator in a pandas series.\n\n
+    Args:
+        high_values(pandas.Series): 'High' values\n
+        low_values(pandas.Series): 'Low' values\n
+        time_period(int): look back time period
+
+
+    Returns:
+        pandas.Series: A tuple containing dc_upper, dc_middle and dc_lower values
+    """
+
+    self.df = pd.DataFrame({
+        "high": high_values,
+        "low": low_values
+    })
+    self.df["dc_upper"] = self.df["high"].rolling(window=time_period).max()
+    self.df["dc_lower"] = self.df["low"].rolling(window=time_period).min()
+    self.df["dc_middle"] = (self.df["dc_upper"] + self.df["dc_lower"]) / 2
+
+    dc_middle, dc_upper, dc_lower = self.df["dc_middle"], self.df["dc_upper"], self.df["dc_lower"]
+
+    self.df = pd.DataFrame(None)
+
+    return dc_upper, dc_middle, dc_lower
+
+
+
 
 
 class DPO:
@@ -621,6 +795,152 @@ class FI:
         fi_values = self.df["FI"].ewm(span=time_period).mean()
         self.df = pd.DataFrame(None)
         return fi_values
+
+class KC:
+  """
+  KC -> Keltner Channel
+  """
+
+  def __init__(self):
+    self.df = pd.DataFrame(None)
+
+  def get_value_df(self, df: pd.DataFrame, time_period: int = 20, atr_time_period: int = 14, atr_multiplier: int = 2):
+    """
+    Get The expected indicator in a pandas dataframe.
+
+    Args:
+        df(pandas.DataFrame): pandas Dataframe with close values\n
+        time_period(int): look back time period to calculate moving average
+        atr_time_period(int): time period to calculate average true range
+        atr_multiplier(int): constant value which will be multiplied by average true range
+
+    Returns:
+        pandas.DataFrame: new pandas dataframe adding kc_upper, kc_middle and kc_lower as three columns, preserving the columns which already exists\n
+    """
+
+    df["kc_middle"] = df["close"].ewm(span=time_period).mean()
+    df = ATR().get_value_df(df, atr_time_period)
+
+    df["kc_upper"] = df["kc_middle"] + atr_multiplier * df["ATR"]
+    df["kc_lower"] = df["kc_middle"] - atr_multiplier * df["ATR"]
+
+    df = df.drop(["ATR"], axis=1)
+
+    return df
+
+  def get_value_list(self, close_values: pd.Series, time_period: int = 20, atr_time_period: int = 14, atr_multiplier: int = 2):
+    """
+    Get The expected indicator in a pandas series.\n\n
+    Args:
+        close_values(pandas.Series): 'Close' values\n
+        time_period(int): look back time period to calculate moving average
+        atr_time_period(int): time period to calculate average true range
+        atr_multiplier(int): constant value which will be multiplied by average true range
+
+    Returns:
+        pandas.Series: A tuple containing kc_upper, kc_middle and kc_lower values
+    """
+
+    self.df = pd.DataFrame({
+        "close": close_values
+    })
+    self.df["kc_middle"] = self.df["close"].ewm(span=time_period).mean()
+    self.df = ATR().get_value_df(self.df, atr_time_period)
+
+    self.df["kc_upper"] = self.df["kc_middle"] + atr_multiplier * self.df["ATR"]
+    self.df["kc_lower"] = self.df["kc_middle"] - atr_multiplier * self.df["ATR"]
+
+    kc_middle, kc_upper, kc_lower = self.df["kc_middle"], self.df["kc_upper"], self.df["kc_lower"]
+
+    self.df = pd.DataFrame(None)
+
+    return kc_upper, kc_middle, kc_lower
+
+class KST:
+  """
+  KST -> KST Oscillator
+  """
+
+  def __init__(self):
+    self.df = pd.DataFrame(None)
+
+  def get_value_df(self, df: pd.DataFrame, roc1: int = 10, roc1_ma_period: int = 10, roc2: int = 15, roc2_ma_period: int = 10,
+                    roc3: int = 20, roc3_ma_period: int = 10, roc4: int = 30, roc4_ma_period: int = 15):
+    """
+    Get The expected indicator in a pandas dataframe.
+
+    Args:
+        df(pandas.DataFrame): pandas Dataframe with close values\n
+        roc1(int): ROC Calculator - 1\n
+        roc1_ma_period(int): Smoothing constant for roc1\n
+        roc2(int): ROC Calculator - 2\n
+        roc2_ma_period(int): Smoothing constant for roc2\n
+        roc3(int): ROC Calculator - 3\n
+        roc3_ma_period(int): Smoothing constant for roc3\n
+        roc4(int): ROC Calculator - 4\n
+        roc4_ma_period(int): Smoothing constant for roc4\n
+
+    Returns:
+        pandas.DataFrame: new pandas dataframe adding KST as a new column, preserving the columns which already exists\n
+    """
+    roc = ROC()
+    df["RCMA1"] = roc.get_value_list(df["close"], time_period=roc1)
+    df["RCMA1"] = df["RCMA1"].rolling(window=roc1_ma_period).mean()
+
+    df["RCMA2"] = roc.get_value_list(df["close"], time_period=roc2)
+    df["RCMA2"] = df["RCMA2"].rolling(window=roc2_ma_period).mean()
+    df["RCMA3"] = roc.get_value_list(df["close"], time_period=roc3)
+    df["RCMA3"] = df["RCMA3"].rolling(window=roc3_ma_period).mean()
+    df["RCMA4"] = roc.get_value_list(df["close"], time_period=roc4)
+    df["RCMA4"] = df["RCMA4"].rolling(window=roc4_ma_period).mean()
+
+    df["KST"] = (df["RCMA1"] * 1) + (df["RCMA2"] * 2) + (df["RCMA3"] * 3) + (df["RCMA4"] * 4)
+    df = df.drop(["RCMA1", "RCMA2", "RCMA3", "RCMA4"], axis=1)
+    return df
+
+
+  def get_value_list(self, close_values: pd.Series, roc1: int = 10, roc1_ma_period: int = 10, roc2: int = 15, roc2_ma_period: int = 10,
+                     roc3: int = 20, roc3_ma_period: int = 10, roc4: int = 30, roc4_ma_period: int = 15):
+    """
+    Get The expected indicator in a pandas series.\n\n
+    Args:
+        close_values(pandas.Series): 'Close' values\n
+        roc1(int): ROC Calculator - 1\n
+        roc1_ma_period(int): Smoothing constant for roc1\n
+        roc2(int): ROC Calculator - 2\n
+        roc2_ma_period(int): Smoothing constant for roc2\n
+        roc3(int): ROC Calculator - 3\n
+        roc3_ma_period(int): Smoothing constant for roc3\n
+        roc4(int): ROC Calculator - 4\n
+        roc4_ma_period(int): Smoothing constant for roc4\n
+
+    Returns:
+        pandas.Series: A pandas Series of KST values
+    """
+
+    self.df = pd.DataFrame({
+        "close": close_values
+    })
+    roc = ROC()
+    self.df["RCMA1"] = roc.get_value_list(self.df["close"], time_period=roc1)
+    self.df["RCMA1"] = self.df["RCMA1"].rolling(window=roc1_ma_period).mean()
+
+    self.df["RCMA2"] = roc.get_value_list(self.df["close"], time_period=roc2)
+    self.df["RCMA2"] = self.df["RCMA2"].rolling(window=roc2_ma_period).mean()
+    self.df["RCMA3"] = roc.get_value_list(self.df["close"], time_period=roc3)
+    self.df["RCMA3"] = self.df["RCMA3"].rolling(window=roc3_ma_period).mean()
+    self.df["RCMA4"] = roc.get_value_list(self.df["close"], time_period=roc4)
+    self.df["RCMA4"] = self.df["RCMA4"].rolling(window=roc4_ma_period).mean()
+
+    kst_values = (self.df["RCMA1"] * 1) + (self.df["RCMA2"] * 2) + (self.df["RCMA3"] * 3) + (self.df["RCMA4"] * 4)
+
+
+    self.df = pd.DataFrame(None)
+
+    return kst_values
+
+
+
 
 
 class MI:
@@ -1928,6 +2248,80 @@ class TR:
         return tr_values
 
 
+class TSI:
+  """
+  TSI -> True Strength Index
+  """
+
+  def __init__(self):
+    self.df = pd.DataFrame(None)
+
+  def get_value_df(self, df: pd.DataFrame, time_period1: int = 25, time_period2: int = 13):
+    """
+    Get The expected indicator in a pandas dataframe.
+
+    Args:
+        df(pandas.DataFrame): pandas Dataframe with close values\n
+        time_period1(int): time period to calculate moving average of price change
+        time_period2(int): time period to calcualte moving average of prior moving average
+
+    Returns:
+        pandas.DataFrame: new pandas dataframe adding TSI as a new column, preserving the columns which already exists\n
+    """
+    df["close_prev"] = df["close"].shift(1)
+    df["PC"] = df["close"] - df["close_prev"]
+    df["PCs"] = df["PC"].ewm(span=time_period1).mean()
+    df["PCDs"] = df["PCs"].ewm(span=time_period2).mean()
+
+    df["APC"] = abs(df["close"] - df["close_prev"])
+    df["APCs"] = df["APC"].ewm(span=time_period1).mean()
+    df["APCDs"] = df["APCs"].ewm(span=time_period2).mean()
+
+    df["TSI"] = df["PCDs"] / df["APCDs"] * 100
+
+    df["TSI"].iloc[:time_period1+time_period2] = np.nan
+
+    df = df.drop(["close_prev", "PC", "PCs", "PCDs", "APC", "APCs", "APCDs"], axis = 1)
+
+    return df
+
+
+
+  def get_value_list(self, close_values: pd.Series, time_period1: int = 25, time_period2: int = 13):
+    """
+    Get The expected indicator in a pandas series.\n\n
+    Args:
+        close_values(pandas.Series): 'Close' values\n
+        time_period1(int): time period to calculate moving average of price change
+        time_period2(int): time period to calcualte moving average of prior moving average
+
+    Returns:
+        pandas.Series: A pandas Series of TSI values
+    """
+
+    self.df = pd.DataFrame({
+        "close": close_values
+    })
+    self.df["close_prev"] = self.df["close"].shift(1)
+    self.df["PC"] = self.df["close"] - self.df["close_prev"]
+    self.df["PCs"] = self.df["PC"].ewm(span=time_period1).mean()
+    self.df["PCDs"] = self.df["PCs"].ewm(span=time_period2).mean()
+
+    self.df["APC"] = abs(self.df["close"] - self.df["close_prev"])
+    self.df["APCs"] = self.df["APC"].ewm(span=time_period1).mean()
+    self.df["APCDs"] = self.df["APCs"].ewm(span=time_period2).mean()
+
+    tsi_values = self.df["PCDs"] / self.df["APCDs"] * 100
+
+    tsi_values[: time_period1 + time_period2] = np.nan
+
+    self.df = pd.DataFrame(None)
+
+    return tsi_values
+
+
+
+
 class TYP:
     """
     TYP -> Typical Price
@@ -2055,6 +2449,79 @@ class VHF:
         self.df = pd.DataFrame(None)
         return vhf_values
 
+class VI:
+  """
+  VI -> Vortex Indicator
+  """
+
+  def __init__(self):
+    self.df = pd.DataFrame(None)
+
+  def get_value_df(self, df: pd.DataFrame, time_period: int = 25):
+    """
+    Get The expected indicator in a pandas dataframe.
+
+    Args:
+        df(pandas.DataFrame): pandas Dataframe with high, low, and close values\n
+        time_period(int): look back time period
+
+    Returns:
+        pandas.DataFrame: new pandas dataframe adding VI+ and VI- as two columns, preserving the columns which already exists\n
+    """
+
+    df = TR().get_value_df(df)
+    df["low_prev"] = df["low"].shift(1)
+    df["high_prev"] = df["high"].shift(1)
+
+    df["VM+"] = abs(df["high"] - df["low_prev"])
+    df["VM-"] = abs(df["low"] - df["high_prev"])
+
+    df["TRn"] = df["TR"].rolling(window=time_period).sum()
+    df["VM+n"] = df["VM+"].rolling(window=time_period).sum()
+    df["VM-n"] = df["VM-"].rolling(window=time_period).sum()
+
+    df["VI+"] = df["VM+n"] / df["TRn"]
+    df["VI-"] = df["VM-n"] / df["TRn"]
+
+    df = df.drop(["low_prev", "high_prev", "VM+", "VM-", "TR", "TRn", "VM+n", "VM-n"], axis=1)
+    return df
+
+  def get_value_list(self, high_values: pd.Series, low_values: pd.Series, close_values: pd.Series,  time_period: int = 14):
+    """
+    Get The expected indicator in a pandas series.\n\n
+    Args:
+        high_values(pandas.Series): 'High' values\n
+        low_values(pandas.Series): 'Low' values\n
+        close_values(pandas.Series): 'Close' values\n
+        time_period(int): look back time period
+
+    Returns:
+        pandas.Series: A tuple containing vi_plus and vi_minus values
+    """
+
+    self.df = pd.DataFrame({
+        "high": high_values,
+        "low": low_values,
+        "close": close_values
+    })
+    self.df = TR().get_value_df(self.df)
+    self.df["low_prev"] = self.df["low"].shift(1)
+    self.df["high_prev"] = self.df["high"].shift(1)
+
+    self.df["VM+"] = abs(self.df["high"] - self.df["low_prev"])
+    self.df["VM-"] = abs(self.df["low"] - self.df["high_prev"])
+
+    self.df["TRn"] = self.df["TR"].rolling(window=time_period).sum()
+    self.df["VM+n"] = self.df["VM+"].rolling(window=time_period).sum()
+    self.df["VM-n"] = self.df["VM-"].rolling(window=time_period).sum()
+
+    vi_plus = self.df["VM+n"] / self.df["TRn"]
+    vi_minus = self.df["VM-n"] / self.df["TRn"]
+
+
+    self.df = pd.DataFrame(None)
+
+    return vi_plus, vi_minus
 
 class VO:
     """
@@ -2245,7 +2712,7 @@ class WilliamsR:
             "Williams R is tries to determine overbought and oversold levels of an asset")
         return info
 
-    def get_value_df(self, df, time_period=14):
+    def get_value_df(self, df: pd.DataFrame, time_period: int = 14):
         """
         Get The expected indicator in a pandas dataframe.
 
