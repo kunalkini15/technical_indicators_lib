@@ -5,12 +5,12 @@ with open('README.md') as f:
     README = f.read()
 
 setuptools.setup(
-    author="Kunal Kini K, Kruthika Kt",
+    author="Kunal Kini K",
     author_email="kunalkini15@gmail.com",
     name='technical-indicators',
     license="MIT",
-    description='technical-indicators is a python package for fetching stock market techincal indicators data',
-    version='v0.0.1',
+    description='Technical indicators library provides means to derive stock market technical indicators.',
+    version='0.0.1',
     long_description=README,
     url='https://github.com/kunalkini015/technical-indicators',
     packages=setuptools.find_packages(),
