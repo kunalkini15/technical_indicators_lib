@@ -3,7 +3,7 @@
 
 
 
-Provides multiple ways of deriving technical indicators using raw OHLCV(Open, High, Low, Close, Volume) values. 
+Provides multiple ways of deriving technical indicators using raw OHLCV(Open, High, Low, Close, Volume) values.
 
 Supports 35 technical Indicators at present.
 
@@ -25,7 +25,7 @@ Provides 2 ways to get the values,
 
 
 
-2. You can send numpy arrays or pandas series of required values and you will get a new pandas series in return. 
+2. You can send numpy arrays or pandas series of required values and you will get a new pandas series in return.
 
 
 ## Installation
@@ -37,8 +37,8 @@ pip install  technical_indicators_lib
 ## Usage
 ```python
 # import dependencies
-#import pandas as pd
-#import numpy as np
+import pandas as pd
+import numpy as np
 
 # importing an indicator class
 from technical_indicators_lib import OBV
@@ -57,13 +57,15 @@ df = obv.get_value_df(df)
 obv_values = obv.get_value_list(df["close"], df["volume"])
 ```
 
+## Documentation
+https://technical-indicators-library.readthedocs.io/en/latest/
 
 
 ## Development
 
 Want to contribute?
 
-Great. Follow these steps, 
+Great. Follow these steps,
 
 ```
 git clone https://github.com/kunalkini015/technical-indicators.git
@@ -86,8 +88,6 @@ then you are good to go. You can create a pull request or write to me at kunalki
 
 ## Credits
 
-Developed by Kunal Kini K, a software engineer by profession and passion. 
+Developed by Kunal Kini K, a software engineer by profession and passion.
 
 If you have any comments, feedbacks or queries, write to me at kunalkini15@gmail.com
-
-
