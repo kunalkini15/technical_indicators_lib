@@ -7,9 +7,9 @@ with open('README.md') as f:
 setuptools.setup(
     author="Kunal Kini K",
     author_email="kunalkini15@gmail.com",
-    name='technical-indicators',
+    name='technical_indicators_lib',
     license="MIT",
-    description='Technical indicators library provides means to derive stock market technical indicators.',
+    description='Technical Indicators Library provides means to derive stock market technical indicators.',
     version='0.0.1',
     long_description=README,
     url='https://github.com/kunalkini015/technical-indicators',
