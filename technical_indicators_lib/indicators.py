@@ -1927,6 +1927,8 @@ class PVT:
         df["close_prev"] = df["close"].shift(1)
         df["PVT"] = df.apply(self.__get_pvt_util, axis=1)
 
+        return df
+
     def get_value_list(self, close_values: pd.Series, volume_values: pd.Series):
         """
         Get The expected indicator in a pandas series.\n\n
@@ -2266,7 +2268,7 @@ class RSI:
         self.df["GAIN"] = 0.0
         self.df["LOSS"] = 0.0
 
-        self.df.loc[df["close"] > self.df["close_prev"],
+        self.df.loc[self.df["close"] > self.df["close_prev"],
                     "GAIN"] = self.df["close"] - self.df["close_prev"]
 
         self.df.loc[self.df["close_prev"] > self.df["close"],

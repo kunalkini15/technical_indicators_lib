@@ -1,17 +1,22 @@
 from technical_indicators_lib.indicators import (
-    ADI, ATR, CMF, CHO, CHV, DPO, EMV, EMA, FI, MI, MED, MOM,
+    ADI, ATR, BollingerBands, CCI, CMF, CHO, CHV, DC, DPO, EMV, EMA, FI, KC, KST, MI, MED, MOM,
     MFI, MACD, NVI, OBV, PVT, PC, PO, ROC, ROCV, RSI, SMA, VLT, StochasticKAndD,
-    Trix, TR, TYP, VHF, VO, WCL
+    Trix, TR, TSI, TYP, VHF, VO, WCL
 )
 adi = ADI()
 atr = ATR()
+bb = BollingerBands()
+cci = CCI()
 cmf = CMF()
 cho = CHO()
 chv = CHV()
+dc = DC()
 dpo = DPO()
 emv = EMV()
 ema = EMA()
 fi = FI()
+kc = KC()
+kst = KST()
 mi = MI()
 mem = MED()
 mom = MOM()
@@ -30,6 +35,7 @@ vlt = VLT()
 stochastic_k_and_d = StochasticKAndD()
 trix = Trix()
 tr = TR()
+tsi = TSI()
 typ = TYP()
 vhf = VHF()
 vo = VO()
